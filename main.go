@@ -6,12 +6,19 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"time"
 )
 
 const (
 	port            = "12345"
 	metricsPath     = "/metrics"
 	metricsFilePath = "metrics_from_special_app.txt"
+	cacheDuration   = 1 * time.Minute
+)
+
+var (
+	metrics     map[string]string // simple cache implementation
+	lastUpdated time.Time
 )
 
 func main() {
@@ -31,26 +38,32 @@ func main() {
 
 func metricsHandler(w http.ResponseWriter, r *http.Request) {
 
-	// read metric values from file
-	metricsData, err := ioutil.ReadFile(metricsFilePath)
+	// read metrics file if cache is expired
+	if time.Since(lastUpdated) > cacheDuration {
 
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+		// read metric values from file
+		metricsData, err := ioutil.ReadFile(metricsFilePath)
 
-	// parse metrics data into a map
-	metrics := make(map[string]string)
-
-	for _, line := range bytes.Split(metricsData, []byte("\n")) {
-		if len(line) == 0 {
-			continue
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
 		}
-		parts := bytes.SplitN(line, []byte("="), 2)
-		if len(parts) != 2 {
-			continue
+
+		// parse metrics data into a map
+		metrics = make(map[string]string)
+
+		for _, line := range bytes.Split(metricsData, []byte("\n")) {
+			if len(line) == 0 {
+				continue
+			}
+			parts := bytes.SplitN(line, []byte("="), 2)
+			if len(parts) != 2 {
+				continue
+			}
+			metrics[string(parts[0])] = string(parts[1])
 		}
-		metrics[string(parts[0])] = string(parts[1])
+
+		lastUpdated = time.Now()
 	}
 
 	// write metrics to response writer

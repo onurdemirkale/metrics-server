@@ -10,7 +10,7 @@ import (
 const (
 	port            = "12345"
 	metricsPath     = "/metrics"
-	metricsFilePath = "metrics_from_special_app.txt"
+	metricsFilePath = "data/metrics_from_special_app.txt"
 	cacheDuration   = 1 * time.Minute
 )
 

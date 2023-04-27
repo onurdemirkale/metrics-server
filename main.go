@@ -8,12 +8,18 @@ import (
 	"net/http"
 )
 
+const (
+	port            = "12345"
+	metricsPath     = "/metrics"
+	metricsFilePath = "metrics_from_special_app.txt"
+)
+
 func main() {
 	httpServer := &http.Server{
-		Addr: ":12345",
+		Addr: ":" + port,
 	}
 
-	http.HandleFunc("/metrics", metricsHandler)
+	http.HandleFunc(metricsPath, metricsHandler)
 
 	err := httpServer.ListenAndServe()
 
@@ -26,7 +32,7 @@ func main() {
 func metricsHandler(w http.ResponseWriter, r *http.Request) {
 
 	// read metric values from file
-	metricsData, err := ioutil.ReadFile("metrics_from_special_app.txt")
+	metricsData, err := ioutil.ReadFile(metricsFilePath)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

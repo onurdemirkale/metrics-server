@@ -1,6 +1,6 @@
 #!/bin/bash
 
-METRICS_FILE=metrics_from_special_app.txt
+METRICS_FILE=data/metrics_from_special_app.txt
 
 # create the metrics file if it doesn't exist
 if [ ! -f "${METRICS_FILE}" ]; then

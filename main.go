@@ -1,8 +1,6 @@
 package main
 
 import (
-	"bytes"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -17,7 +15,7 @@ const (
 )
 
 var (
-	metrics     map[string]string // simple cache implementation
+	metrics     []byte // simple cache implementation
 	lastUpdated time.Time
 )
 
@@ -36,38 +34,21 @@ func main() {
 
 }
 
-func metricsHandler(w http.ResponseWriter, r *http.Request) {
+func metricsHandler(responseWriter http.ResponseWriter, httpRequest *http.Request) {
 
 	// read metrics file if cache is expired
 	if time.Since(lastUpdated) > cacheDuration {
 
-		// read metric values from file
-		metricsData, err := ioutil.ReadFile(metricsFilePath)
-
+		var err error
+		metrics, err = ioutil.ReadFile(metricsFilePath)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(responseWriter, "Error reading metrics file", http.StatusInternalServerError)
 			return
-		}
-
-		// parse metrics data into a map
-		metrics = make(map[string]string)
-
-		for _, line := range bytes.Split(metricsData, []byte("\n")) {
-			if len(line) == 0 {
-				continue
-			}
-			parts := bytes.SplitN(line, []byte("="), 2)
-			if len(parts) != 2 {
-				continue
-			}
-			metrics[string(parts[0])] = string(parts[1])
 		}
 
 		lastUpdated = time.Now()
 	}
 
 	// write metrics to response writer
-	for key, value := range metrics {
-		fmt.Fprintf(w, "%s=%s\n", key, value)
-	}
+	responseWriter.Write(metrics)
 }
